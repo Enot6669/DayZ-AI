@@ -47,3 +47,21 @@ def test_missing_pbo():
 
 def test_no_false_positive_for_error_word():
     assert analyze_log('errorless run completed') == []
+
+
+def test_servers_endpoint(monkeypatch):
+    from app import main
+    monkeypatch.setattr(main, "server_processes", lambda: [{"pid": 123, "name": "DayZServer_x64.exe"}])
+    result = client.get('/servers')
+    assert result.status_code == 200
+    assert result.json()['mode'] == 'read_only'
+    assert result.json()['servers'][0]['pid'] == 123
+
+def test_process_filter(monkeypatch):
+    from app import server_monitor
+    class FakeProcess:
+        info = {"pid": 42, "name": "DayZServer_x64.exe", "status": "running", "memory_info": None, "cpu_percent": 0.0}
+    class OtherProcess:
+        info = {"pid": 43, "name": "notepad.exe"}
+    monkeypatch.setattr(server_monitor.psutil, "process_iter", lambda attrs: [OtherProcess(), FakeProcess()])
+    assert [p["pid"] for p in server_monitor.server_processes()] == [42]
