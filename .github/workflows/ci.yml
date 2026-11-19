@@ -22,11 +22,39 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
       - name: Build Windows executable
         run: dotnet publish desktop/DayZAI.Desktop/DayZAI.Desktop.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --output publish/DayZAI
+      - name: Package local AI core
+        run: |
+          python -m pip install -r ai-core/requirements.txt 'pyinstaller>=6,<7'
+          python -m PyInstaller --noconfirm --onefile --name DayZAI.Core --distpath publish/DayZAI --collect-submodules uvicorn ai-core/run_core.py
+      - name: Smoke test packaged core
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath (Resolve-Path 'publish/DayZAI/DayZAI.Core.exe') -PassThru
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 45; $i++) {
+              if ($process.HasExited) { throw 'Packaged core exited unexpectedly' }
+              try {
+                $response = Invoke-RestMethod -Uri 'http://127.0.0.1:8765/health' -TimeoutSec 2
+                if ($response.status -eq 'ok') { $ready = $true; break }
+              } catch { }
+              Start-Sleep -Seconds 1
+            }
+            if (-not $ready) { throw 'Packaged core failed health check' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
+      - name: Add setup instructions
+        shell: pwsh
+        run: Copy-Item README.md publish/DayZAI/README.md
       - name: Upload Windows executable
         uses: actions/upload-artifact@v4
         with:
@@ -34,3 +62,23 @@ jobs:
           path: publish/DayZAI/
           if-no-files-found: error
           retention-days: 14
+  preview-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [python-tests, windows-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: DayZ-AI-Windows-x64
+          path: package
+      - name: Archive verified build
+        run: |
+          cd package
+          zip -r ../DayZ-AI-Windows-x64.zip .
+      - name: Publish test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "preview-${GITHUB_RUN_ID}" DayZ-AI-Windows-x64.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "DayZ AI preview ${GITHUB_RUN_NUMBER}" --notes "Automated test build. Python tests and packaged core health check passed. Windows UI and real DayZ server testing are still required."

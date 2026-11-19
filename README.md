@@ -25,6 +25,9 @@ py -m venv .venv
 Install Ollama separately, pull a coding model such as `qwen2.5-coder:7b`, then POST JSON `{ "prompt": "..." }` to `http://127.0.0.1:8765/ask`.
 
 ## Windows desktop
+For a packaged preview, extract the entire Windows ZIP, run `DayZAI.Core.exe` first, then `DayZAI.Desktop.exe`. Stop the core by closing its console when finished. Ollama is optional and separately installed. Preview releases are published after successful CI tests and the packaged core health check.
+
+For development:
 ```powershell
 dotnet run --project desktop/DayZAI.Desktop/DayZAI.Desktop.csproj
 ```
