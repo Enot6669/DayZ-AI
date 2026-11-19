@@ -38,3 +38,12 @@ def test_line_truncation():
 def test_reject_oversize():
     response = client.post('/analyze', json={'text': 'a' * 2_000_001})
     assert response.status_code == 422
+
+def test_generic_error():
+    assert analyze_log('Server ERROR while starting')[0]['category'] == 'server_error'
+
+def test_missing_pbo():
+    assert analyze_log("Cannot open file addons\\\\example.pbo")[0]['category'] == 'missing_mod'
+
+def test_no_false_positive_for_error_word():
+    assert analyze_log('errorless run completed') == []
