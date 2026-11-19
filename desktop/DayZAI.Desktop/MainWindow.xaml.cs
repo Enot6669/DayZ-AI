@@ -130,10 +130,35 @@ public partial class MainWindow : Window
             using var response = await _modelHttp.PostAsJsonAsync("ask", new { prompt });
             response.EnsureSuccessStatusCode();
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            Output.Text = json.RootElement.GetProperty("answer").GetString() ?? "Модель вернула пустой ответ.";
+            var answer = json.RootElement.GetProperty("answer").GetString() ?? "Модель вернула пустой ответ.";
+            Output.Text = answer + "\n\nПодобранные справочные материалы (не доказательство проверенного ответа):\n" + FormatReferences(json.RootElement.GetProperty("references"));
         }
         catch (Exception ex) { Output.Text = $"ИИ недоступен. Проверьте ядро и Ollama: {ex.Message}"; }
         finally { AskButton.IsEnabled = true; }
+    }
+    private static string FormatReferences(JsonElement entries)
+    {
+        if (entries.GetArrayLength() == 0) return "Подходящих материалов не найдено.";
+        var report = new System.Text.StringBuilder();
+        foreach (var item in entries.EnumerateArray())
+        {
+            report.AppendLine($"[{item.GetProperty("id").GetString()}] {item.GetProperty("title").GetString()}");
+            report.AppendLine(item.GetProperty("summary").GetString());
+            report.AppendLine(item.GetProperty("source").GetString());
+            report.AppendLine();
+        }
+        return report.ToString();
+    }
+    private async void Knowledge_Click(object sender, RoutedEventArgs e)
+    {
+        var query = Prompt.Text.Trim();
+        if (query.Length == 0) { Output.Text = "Введите тему, ошибку или название API для поиска."; return; }
+        try
+        {
+            using var json = JsonDocument.Parse(await _http.GetStringAsync("knowledge?q=" + Uri.EscapeDataString(query)));
+            Output.Text = $"База знаний DayZ: {json.RootElement.GetProperty("total_entries").GetInt32()} материалов.\n\n" + FormatReferences(json.RootElement.GetProperty("results"));
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка поиска: {ex.Message}"; }
     }
     private async void CheckConfig_Click(object sender, RoutedEventArgs e)
     {

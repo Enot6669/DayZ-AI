@@ -15,6 +15,7 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - Local server profiles stored in `%LOCALAPPDATA%/DayZAI/profiles.json`, with read-only checks for the server executable, default config, installed `@` mods, PBOs and keys. Does not resolve dependency graphs or verify signatures.
 - Single configuration file backup (JSON/XML/CFG/INI/TXT, up to 10 MiB) in a ZIP with SHA-256 and metadata. Restore verifies the checksum and requires confirmation before creating a new file; existing files are never overwritten. These archives may contain passwords; store them securely. Not a live-world/server snapshot.
 - Optional Ollama generation endpoint and desktop prompt interface; generated code is never executed automatically
+- Bundled offline reference index (14 curated DayZ topics with Bohemia documentation links). Search in the UI without Ollama, or supply relevant excerpts to Ollama for every question. This is retrieval-augmented prompting, not model training or runtime verification. Separate patch addons are the required repair strategy; original PBOs are never edited by the assistant.
 - Python unit/API tests and GitHub Actions Windows build
 
 **Not implemented:** remote agent, server modifications, automatic patches, PBO parser, production installer, model fine-tuning.

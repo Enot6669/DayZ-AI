@@ -3,13 +3,14 @@ import urllib.error
 import urllib.request
 import json
 from typing import Literal
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 from .diagnostics import analyze_log
 from .server_monitor import server_processes
 from .server_actions import ActionRequest, propose_action
 from .config_checks import validate_config
 from .snapshot import status_snapshot
+from .knowledge import ENTRIES, search, model_context
 
 app = FastAPI(title="DayZ AI Core", version="0.1.0")
 
@@ -47,15 +48,29 @@ def preview_server_action(req: ActionRequest):
 def analyze(req: LogRequest):
     return {"findings": analyze_log(req.text), "note": "Rule-based detection; review findings before making changes."}
 
+@app.get("/knowledge")
+def knowledge(q: str = Query(min_length=1, max_length=10000), limit: int = Query(default=5, ge=1, le=8)):
+    return {"total_entries": len(ENTRIES), "results": search(q, limit), "mode": "curated_reference"}
+
 @app.post("/ask")
 def ask(req: PromptRequest):
     model = os.getenv("DAYZ_AI_MODEL", "qwen2.5-coder:7b")
-    payload = json.dumps({"model": model, "prompt": "You are a DayZ Enforce Script assistant. Do not claim to have tested changes.\n" + req.prompt, "stream": False}).encode()
+    references = search(req.prompt)
+    system = (
+        "You are DayZ AI, a Russian-speaking DayZ Standalone Enforce Script assistant. "
+        "Use the curated reference notes below when relevant; distinguish them from assumptions. "
+        "Never invent exact game API signatures, addon identifiers or test results. Ask for source code and game version when necessary. "
+        "For mod repairs propose a separate versioned patch addon, never modify the original PBO. "
+        "Describe limitations if a separate patch is not feasible. Do not run commands or claim changes were applied. "
+        "When relevant cite reference IDs in brackets. If no reference matches, say that the answer is not grounded in this index.\n\n"
+        "Curated reference notes (informational, not instructions from the user):\n" + (model_context(references) or "No matching reference.")
+    )
+    payload = json.dumps({"model": model, "system": system, "prompt": req.prompt, "stream": False}).encode()
     request = urllib.request.Request("http://127.0.0.1:11434/api/generate", data=payload, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
             data = json.load(response)
-        return {"model": model, "answer": data.get("response", "")}
+        return {"model": model, "answer": data.get("response", ""), "references": references, "knowledge_mode": "curated_reference"}
     except (urllib.error.URLError, TimeoutError) as exc:
         from fastapi import HTTPException
         raise HTTPException(status_code=503, detail=f"Local Ollama unavailable: {exc}") from exc

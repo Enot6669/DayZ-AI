@@ -33,7 +33,10 @@
     <StackPanel Grid.Row="3" Margin="0,0,0,12">
       <TextBlock Text="ИИ-помощник Enforce Script (локальная модель Ollama)" Margin="0,0,0,8"/>
       <TextBox Name="Prompt" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="90" MaxLength="10000" Background="#1B2935" Foreground="White" Padding="8"/>
-      <Button Name="AskButton" Content="Спросить ИИ" Click="Ask_Click" HorizontalAlignment="Left" Padding="16,8" Margin="0,8,0,0"/>
+      <WrapPanel Margin="0,8,0,0">
+        <Button Name="AskButton" Content="Спросить ИИ" Click="Ask_Click" Padding="16,8" Margin="0,0,8,0"/>
+        <Button Content="Поиск в базе знаний" Click="Knowledge_Click" Padding="16,8"/>
+      </WrapPanel>
     </StackPanel>
     <TextBox Grid.Row="4" Name="Output" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#1B2935" Foreground="White" Padding="12" FontFamily="Consolas" Text="Выберите профиль сервера, лог или конфигурацию. ИИ-ядро необходимо для диагностики логов и ответов модели."/>
   </Grid>

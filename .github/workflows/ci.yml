@@ -51,6 +51,8 @@ jobs:
               Start-Sleep -Seconds 1
             }
             if (-not $ready) { throw 'Packaged core failed health check' }
+            $knowledge = Invoke-RestMethod -Uri 'http://127.0.0.1:8765/knowledge?q=modded%20class%20override' -TimeoutSec 5
+            if ($knowledge.results[0].id -ne 'modded-class') { throw 'Packaged knowledge retrieval failed' }
           } finally {
             if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
           }
