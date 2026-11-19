@@ -6,6 +6,7 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - WPF Windows desktop application (.NET 10)
 - Local FastAPI AI core, bound to 127.0.0.1
 - Rule-based DayZ log scanning (RPT, LOG, ADM)
+- Read-only local DayZ server process monitoring via GET /servers (Windows UI: «Найти серверы»)
 - Optional Ollama generation endpoint
 - Python unit/API tests and GitHub Actions Windows build
 
@@ -26,7 +27,7 @@ Install Ollama separately, pull a coding model such as `qwen2.5-coder:7b`, then 
 ```powershell
 dotnet run --project desktop/DayZAI.Desktop/DayZAI.Desktop.csproj
 ```
-Requires Windows and .NET 10 SDK. The GUI currently provides log selection and AI-core health check.
+Requires Windows and .NET 10 SDK. The GUI currently provides log selection, local server process listing and AI-core health check.
 
 ## Tests
 ```powershell
