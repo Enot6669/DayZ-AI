@@ -8,5 +8,6 @@
   <ItemGroup>
     <Compile Include="../DayZAI.Desktop/ServerWorkspace.cs" Link="ServerWorkspace.cs"/>
     <Compile Include="../DayZAI.Desktop/ServerLaunch.cs" Link="ServerLaunch.cs"/>
+    <Compile Include="../DayZAI.Desktop/SteamManager.cs" Link="SteamManager.cs"/>
   </ItemGroup>
 </Project>

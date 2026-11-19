@@ -10,6 +10,7 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - System CPU/RAM and process snapshots (`GET /status`). Export a snapshot on a server computer using `DayZAI.Core.exe --snapshot` and import its JSON in the desktop app. This is a manual offline exchange, not an authenticated live remote agent.
 - Confirmed local launch using the selected profile, default `serverDZ.cfg`, game port and semicolon-separated installed `@mod` folders. No shell commands or automatic AI actions. Only one DayZ process is supported at a time; stop/restart must still be done using your existing server administration tools. A created process does not prove game server readiness.
 - Launch audit records in `%LOCALAPPDATA%/DayZAI/operations.jsonl`.
+- Steam Manager for installing/updating the stable DayZ dedicated server (223350), downloading Workshop items (221100) by numeric item ID, and installing a new downloaded mod as `@Workshop_ID` with non-conflicting `.bikey` files. No existing mod is replaced. Operations require user confirmation and a stopped local server.
 - JSON/XML syntax validation without editing files (not a DayZ schema check)
 - Local server profiles stored in `%LOCALAPPDATA%/DayZAI/profiles.json`, with read-only checks for the server executable, default config, installed `@` mods, PBOs and keys. Does not resolve dependency graphs or verify signatures.
 - Single configuration file backup (JSON/XML/CFG/INI/TXT, up to 10 MiB) in a ZIP with SHA-256 and metadata. Restore verifies the checksum and requires confirmation before creating a new file; existing files are never overwritten. These archives may contain passwords; store them securely. Not a live-world/server snapshot.
@@ -33,6 +34,15 @@ Install Ollama separately, pull a coding model such as `qwen2.5-coder:7b`, then 
 For a packaged preview, extract the entire Windows ZIP, run `DayZAI.Core.exe` first, then `DayZAI.Desktop.exe`. Stop the core by closing its console when finished. Ollama is optional and separately installed. Preview releases are published after successful CI tests and the packaged core health check.
 
 To collect an offline status report from an authorized remote Windows machine, run `cmd /c "DayZAI.Core.exe --snapshot > status.json"` there and transfer the JSON via your existing secure administration channel. Do not expose the core API to the network. Imported reports are not authenticated or live.
+
+## Steam Manager
+1. Add a local profile (an existing empty folder is fine for a new installation).
+2. Open Steam / Workshop and select the official SteamCMD executable. The Valve ZIP download button opens the official location; extract it in its own directory.
+3. Enter only your Steam account name. SteamCMD handles login, passwords, Steam Guard and Steam entitlement checks in its own console. DayZ AI does not collect passwords, API keys or Guard codes. SteamCMD may cache its own session: protect its folder.
+4. Choose install/update server, or download a Workshop item by ID. Confirm the operation after stopping all DayZ processes and backing up configurations.
+5. After a successful Workshop download, choose install downloaded mod, then explicitly add `@Workshop_ID` to the launch list. No automatic dependency resolution, compatibility verification or replacement of existing mods is performed.
+
+Steam Guard authenticates the Steam login, not arbitrary DayZ AI administrative operations. Local operation confirmations are separate; the app does not claim a Steam Web API ownership verification without publisher credentials. SteamCMD exit codes and existing files alone are not proof of a fresh successful download. If installation fails, check SteamCMD output and any `.dayzai-stage-*` folder created during staging. Do not update a running server.
 
 For development:
 ```powershell

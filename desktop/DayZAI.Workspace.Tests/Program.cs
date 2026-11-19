@@ -51,6 +51,25 @@ try
     using (var record = System.Text.Json.JsonDocument.Parse(File.ReadAllText(journal)))
         Check(record.RootElement.GetProperty("pid").GetInt32() == 123, "Journal round trip failed");
 
+    var steamcmd = Path.Combine(root, "steamcmd.exe");
+    File.WriteAllText(steamcmd, "fixture, not executable");
+    var steamPlan = SteamManager.Prepare(steamcmd, profile, "TestAccount");
+    Check(steamPlan.ArgumentList.SequenceEqual(new[] { "+force_install_dir", server, "+login", "TestAccount", "+app_update", "223350", "+quit" }), "Wrong Steam server arguments");
+    var modPlan = SteamManager.Prepare(steamcmd, profile, "TestAccount", "123456");
+    Check(modPlan.ArgumentList.Contains("221100") && modPlan.ArgumentList.Contains("123456"), "Wrong Workshop app or item ID");
+    Reject(() => SteamManager.Prepare(steamcmd, profile, "TestAccount +quit"), "Invalid login accepted");
+    Reject(() => SteamManager.ValidateWorkshopId("123;quit"), "Invalid Workshop ID accepted");
+    Reject(() => SteamManager.ValidateWorkshopId("0"), "Zero Workshop ID accepted");
+    var workshop = Path.Combine(server, "steamapps", "workshop", "content", "221100", "123456");
+    Directory.CreateDirectory(Path.Combine(workshop, "addons"));
+    Directory.CreateDirectory(Path.Combine(workshop, "keys"));
+    File.WriteAllText(Path.Combine(workshop, "addons", "fixture.pbo"), "test mod");
+    File.WriteAllText(Path.Combine(workshop, "keys", "fixture.bikey"), "test key");
+    var installed = SteamManager.InstallNewModConfirmed(steamcmd, profile, "123456");
+    Check(File.Exists(Path.Combine(installed, "addons", "fixture.pbo")), "Workshop mod not installed");
+    Check(File.Exists(Path.Combine(server, "keys", "fixture.bikey")), "Workshop key not installed");
+    Reject(() => SteamManager.InstallNewModConfirmed(steamcmd, profile, "123456"), "Existing mod overwritten");
+
     var archive = Path.Combine(root, "backup.zip");
     var created = ServerWorkspace.CreateBackup(cfg, archive);
     var backup = ServerWorkspace.ReadBackup(archive);

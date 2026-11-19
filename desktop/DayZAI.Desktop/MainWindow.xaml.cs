@@ -68,6 +68,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) { Output.Text = $"Ошибка чтения журнала: {ex.Message}"; }
     }
+    private void Steam_Click(object sender, RoutedEventArgs e)
+    {
+        if (Profiles.SelectedItem is not ServerProfile profile) { Output.Text = "Создайте профиль с папкой установки сервера (можно пустой)."; return; }
+        new SteamWindow(profile, _journalFile) { Owner = this }.ShowDialog();
+    }
     private async void InspectProfile_Click(object sender, RoutedEventArgs e)
     {
         if (Profiles.SelectedItem is not ServerProfile profile) { Output.Text = "Сначала добавьте профиль."; return; }
