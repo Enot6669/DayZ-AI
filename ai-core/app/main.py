@@ -5,6 +5,7 @@ import json
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from .diagnostics import analyze_log
+from .server_monitor import server_processes
 
 app = FastAPI(title="DayZ AI Core", version="0.1.0")
 
@@ -17,6 +18,10 @@ class PromptRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "0.1.0"}
+
+@app.get("/servers")
+def servers():
+    return {"servers": server_processes(), "mode": "read_only"}
 
 @app.post("/analyze")
 def analyze(req: LogRequest):
