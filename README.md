@@ -8,6 +8,8 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - Rule-based DayZ log scanning (RPT, LOG, ADM)
 - Read-only local DayZ server process monitoring via GET /servers (Windows UI: «Найти серверы»)
 - JSON/XML syntax validation without editing files (not a DayZ schema check)
+- Local server profiles stored in `%LOCALAPPDATA%/DayZAI/profiles.json`, with read-only checks for the server executable, default config, installed `@` mods, PBOs and keys. Does not resolve dependency graphs or verify signatures.
+- Single configuration file backup (JSON/XML/CFG/INI/TXT, up to 10 MiB) in a ZIP with SHA-256 and metadata. Restore verifies the checksum and requires confirmation before creating a new file; existing files are never overwritten. These archives may contain passwords; store them securely. Not a live-world/server snapshot.
 - Optional Ollama generation endpoint and desktop prompt interface; generated code is never executed automatically
 - Python unit/API tests and GitHub Actions Windows build
 
@@ -38,5 +40,7 @@ Requires Windows and .NET 10 SDK. The GUI currently provides log selection, loca
 cd ai-core
 .venv\Scripts\python -m pytest -q
 ```
+
+On Windows: `dotnet run --project desktop/DayZAI.Workspace.Tests/DayZAI.Workspace.Tests.csproj --configuration Release` from the repository root. Tests use temporary folders, not a live server.
 
 Security: Local API listens only on loopback. Do not expose this development API publicly. Logs can contain sensitive data; do not share them without review.

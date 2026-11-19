@@ -1,6 +1,6 @@
 <Window x:Class="DayZAI.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="DayZ AI — Developer &amp; Server Doctor" Width="990" Height="720" MinWidth="650" MinHeight="520" Background="#101820" Foreground="White">
   <Grid Margin="24">
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
     <TextBlock Text="DayZ AI — Developer &amp; Server Doctor" FontSize="28" FontWeight="Bold"/>
     <WrapPanel Grid.Row="1" Margin="0,18,0,18">
       <Button Content="Выбрать лог DayZ" Click="SelectLog_Click" Padding="12,10" Margin="0,0,8,8"/>
@@ -8,11 +8,23 @@
       <Button Content="Проверить конфигурацию" Click="CheckConfig_Click" Padding="12,10" Margin="0,0,8,8"/>
       <Button Content="Проверить ядро" Click="CheckAI_Click" Padding="12,10" Margin="0,0,8,8"/>
     </WrapPanel>
-    <StackPanel Grid.Row="2" Margin="0,0,0,12">
+    <StackPanel Grid.Row="2" Margin="0,0,0,16">
+      <TextBlock Text="Локальные профили серверов" FontWeight="Bold" Margin="0,0,0,8"/>
+      <DockPanel LastChildFill="True">
+        <Button DockPanel.Dock="Right" Content="Добавить папку" Click="AddProfile_Click" Padding="12,8" Margin="8,0,0,0"/>
+        <ComboBox Name="Profiles" DisplayMemberPath="Folder" MinWidth="200"/>
+      </DockPanel>
+      <WrapPanel Margin="0,8,0,0">
+        <Button Content="Проверить сервер и моды" Click="InspectProfile_Click" Padding="12,8" Margin="0,0,8,4"/>
+        <Button Content="Копия конфигурации" Click="Backup_Click" Padding="12,8" Margin="0,0,8,4"/>
+        <Button Content="Восстановить в новый файл" Click="Restore_Click" Padding="12,8" Margin="0,0,8,4"/>
+      </WrapPanel>
+    </StackPanel>
+    <StackPanel Grid.Row="3" Margin="0,0,0,12">
       <TextBlock Text="ИИ-помощник Enforce Script (локальная модель Ollama)" Margin="0,0,0,8"/>
       <TextBox Name="Prompt" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="90" MaxLength="10000" Background="#1B2935" Foreground="White" Padding="8"/>
       <Button Name="AskButton" Content="Спросить ИИ" Click="Ask_Click" HorizontalAlignment="Left" Padding="16,8" Margin="0,8,0,0"/>
     </StackPanel>
-    <TextBox Grid.Row="3" Name="Output" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#1B2935" Foreground="White" Padding="12" FontFamily="Consolas" Text="Выберите лог DayZ для первичного анализа. ИИ-ядро должно быть запущено отдельно."/>
+    <TextBox Grid.Row="4" Name="Output" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#1B2935" Foreground="White" Padding="12" FontFamily="Consolas" Text="Выберите профиль сервера, лог или конфигурацию. ИИ-ядро необходимо для диагностики логов и ответов модели."/>
   </Grid>
 </Window>

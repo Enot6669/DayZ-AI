@@ -9,7 +9,83 @@ public partial class MainWindow : Window
 {
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://127.0.0.1:8765/"), Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _modelHttp = new() { BaseAddress = new Uri("http://127.0.0.1:8765/"), Timeout = TimeSpan.FromSeconds(135) };
-    public MainWindow() => InitializeComponent();
+    private readonly string _profilesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DayZAI", "profiles.json");
+    private List<ServerProfile> _profiles = [];
+    public MainWindow()
+    {
+        InitializeComponent();
+        try { _profiles = ServerWorkspace.LoadProfiles(_profilesFile); RefreshProfiles(); }
+        catch (Exception ex) { Output.Text = $"Не удалось загрузить профили: {ex.Message}"; }
+    }
+    private void RefreshProfiles(ServerProfile? selected = null)
+    {
+        Profiles.ItemsSource = null;
+        Profiles.ItemsSource = _profiles;
+        Profiles.SelectedItem = selected ?? _profiles.FirstOrDefault();
+    }
+    private void AddProfile_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = "Выберите локальную папку сервера DayZ" };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            var profile = ServerWorkspace.CreateProfile(dialog.FolderName);
+            var existing = _profiles.FirstOrDefault(x => string.Equals(x.Folder, profile.Folder, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) { RefreshProfiles(existing); return; }
+            var updated = new List<ServerProfile>(_profiles) { profile };
+            ServerWorkspace.SaveProfiles(_profilesFile, updated);
+            _profiles = updated;
+            RefreshProfiles(profile);
+            Output.Text = $"Профиль сохранён: {profile.Folder}";
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка профиля: {ex.Message}"; }
+    }
+    private async void InspectProfile_Click(object sender, RoutedEventArgs e)
+    {
+        if (Profiles.SelectedItem is not ServerProfile profile) { Output.Text = "Сначала добавьте профиль."; return; }
+        try
+        {
+            var result = await Task.Run(() => ServerWorkspace.Inspect(profile));
+            var report = new System.Text.StringBuilder();
+            report.AppendLine(profile.Folder);
+            report.AppendLine($"DayZ Server EXE: {(result.ExecutablePresent ? "найден" : "не найден")}");
+            report.AppendLine($"serverDZ.cfg: {(result.ConfigPresent ? "найден" : "не найден")}");
+            report.AppendLine($"Модов в папках @: {result.Mods.Count}");
+            foreach (var mod in result.Mods) report.AppendLine($"{mod.Name}: PBO {mod.PboCount}, ключи {mod.KeyCount} — {mod.Note}");
+            report.AppendLine("Проверено только наличие файлов. Зависимости, подписи PBO и порядок загрузки не проверены. Сервер не изменён.");
+            Output.Text = report.ToString();
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка проверки папки: {ex.Message}"; }
+    }
+    private async void Backup_Click(object sender, RoutedEventArgs e)
+    {
+        var source = new OpenFileDialog { Filter = "Конфигурации (*.json;*.xml;*.cfg;*.ini;*.txt)|*.json;*.xml;*.cfg;*.ini;*.txt", CheckFileExists = true };
+        if (Profiles.SelectedItem is ServerProfile profile && Directory.Exists(profile.Folder)) source.InitialDirectory = profile.Folder;
+        if (source.ShowDialog() != true) return;
+        var destination = new SaveFileDialog { Filter = "DayZ backup (*.zip)|*.zip", FileName = Path.GetFileName(source.FileName) + ".backup.zip", DefaultExt = ".zip", AddExtension = true };
+        if (destination.ShowDialog() != true) return;
+        try
+        {
+            var metadata = await Task.Run(() => ServerWorkspace.CreateBackup(source.FileName, destination.FileName));
+            Output.Text = $"Копия создана: {destination.FileName}\n SHA-256: {metadata.Sha256}\nАрхив может содержать пароли. Храните его локально.";
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка копирования: {ex.Message}"; }
+    }
+    private async void Restore_Click(object sender, RoutedEventArgs e)
+    {
+        var source = new OpenFileDialog { Filter = "DayZ backup (*.zip)|*.zip", CheckFileExists = true };
+        if (source.ShowDialog() != true) return;
+        try
+        {
+            var backup = await Task.Run(() => ServerWorkspace.ReadBackup(source.FileName));
+            var destination = new SaveFileDialog { FileName = "restored-" + backup.Manifest.FileName, Filter = "Файл конфигурации|*.*", AddExtension = false };
+            if (destination.ShowDialog() != true) return;
+            if (MessageBox.Show($"Контрольная сумма проверена. Создать новый файл?\n{destination.FileName}\nСуществующие файлы не заменяются.", "Восстановление", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            await Task.Run(() => ServerWorkspace.RestoreNewFile(backup.Bytes, destination.FileName));
+            Output.Text = $"Восстановлен отдельный файл: {destination.FileName}";
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка восстановления: {ex.Message}"; }
+    }
     private async void Ask_Click(object sender, RoutedEventArgs e)
     {
         var prompt = Prompt.Text.Trim();

@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Run server workspace tests
+        run: dotnet run --project desktop/DayZAI.Workspace.Tests/DayZAI.Workspace.Tests.csproj --configuration Release
       - name: Build Windows executable
         run: dotnet publish desktop/DayZAI.Desktop/DayZAI.Desktop.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true --output publish/DayZAI
       - name: Package local AI core
@@ -81,4 +83,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "preview-${GITHUB_RUN_ID}" DayZ-AI-Windows-x64.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "DayZ AI preview ${GITHUB_RUN_NUMBER}" --notes "Automated test build. Python tests and packaged core health check passed. Windows UI and real DayZ server testing are still required."
+          gh release create "preview-${GITHUB_RUN_ID}" DayZ-AI-Windows-x64.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "DayZ AI preview ${GITHUB_RUN_NUMBER}" --notes "Automated test build. Python tests, server workspace tests and packaged core health check passed. Windows UI and real DayZ server testing are still required."
