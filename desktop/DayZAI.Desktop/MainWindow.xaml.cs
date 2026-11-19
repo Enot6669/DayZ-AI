@@ -43,7 +43,28 @@ public partial class MainWindow : Window
             using var response = await _http.PostAsJsonAsync("analyze", new { text = content });
             response.EnsureSuccessStatusCode();
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            Output.Text = JsonSerializer.Serialize(json.RootElement, new JsonSerializerOptions { WriteIndented = true });
+            var findings = json.RootElement.GetProperty("findings");
+            if (findings.GetArrayLength() == 0)
+            {
+                Output.Text = "Подозрительных строк не обнаружено. Это не гарантирует отсутствие проблем.";
+                return;
+            }
+            var report = new System.Text.StringBuilder();
+            report.AppendLine($"Найдено сообщений: {findings.GetArrayLength()}");
+            report.AppendLine();
+            foreach (var item in findings.EnumerateArray())
+            {
+                var line = item.GetProperty("line").GetInt32();
+                var category = item.GetProperty("category").GetString();
+                var severity = item.GetProperty("severity").GetString();
+                var message = item.GetProperty("message").GetString();
+                var advice = item.GetProperty("advice").GetString();
+                report.AppendLine($"Строка {line} | {severity} | {category}");
+                report.AppendLine(message);
+                report.AppendLine($"Рекомендация: {advice}");
+                report.AppendLine(new string('─', 48));
+            }
+            Output.Text = report.ToString();
         }
         catch (Exception ex) { Output.Text = $"Ошибка анализа: {ex.Message}"; }
     }
