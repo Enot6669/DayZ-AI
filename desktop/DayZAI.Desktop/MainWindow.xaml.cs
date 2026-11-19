@@ -14,6 +14,23 @@ public partial class MainWindow : Window
         try { Output.Text = await _http.GetStringAsync("health"); }
         catch (Exception ex) { Output.Text = $"ИИ-ядро недоступно: {ex.Message}"; }
     }
+    private async void CheckServers_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var response = await _http.GetAsync("servers");
+            response.EnsureSuccessStatusCode();
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var servers = json.RootElement.GetProperty("servers");
+            if (servers.GetArrayLength() == 0)
+            {
+                Output.Text = "Запущенные процессы DayZ Server не найдены на этом компьютере.";
+                return;
+            }
+            Output.Text = JsonSerializer.Serialize(servers, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex) { Output.Text = $"Не удалось получить состояние сервера: {ex.Message}"; }
+    }
     private async void SelectLog_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog { Filter = "DayZ logs (*.rpt;*.log;*.adm)|*.rpt;*.log;*.adm|Text files (*.txt)|*.txt", CheckFileExists = true };
