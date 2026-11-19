@@ -7,6 +7,9 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - Local FastAPI AI core, bound to 127.0.0.1
 - Rule-based DayZ log scanning (RPT, LOG, ADM)
 - Read-only local DayZ server process monitoring via GET /servers (Windows UI: «Найти серверы»)
+- System CPU/RAM and process snapshots (`GET /status`). Export a snapshot on a server computer using `DayZAI.Core.exe --snapshot` and import its JSON in the desktop app. This is a manual offline exchange, not an authenticated live remote agent.
+- Confirmed local launch using the selected profile, default `serverDZ.cfg`, game port and semicolon-separated installed `@mod` folders. No shell commands or automatic AI actions. Only one DayZ process is supported at a time; stop/restart must still be done using your existing server administration tools. A created process does not prove game server readiness.
+- Launch audit records in `%LOCALAPPDATA%/DayZAI/operations.jsonl`.
 - JSON/XML syntax validation without editing files (not a DayZ schema check)
 - Local server profiles stored in `%LOCALAPPDATA%/DayZAI/profiles.json`, with read-only checks for the server executable, default config, installed `@` mods, PBOs and keys. Does not resolve dependency graphs or verify signatures.
 - Single configuration file backup (JSON/XML/CFG/INI/TXT, up to 10 MiB) in a ZIP with SHA-256 and metadata. Restore verifies the checksum and requires confirmation before creating a new file; existing files are never overwritten. These archives may contain passwords; store them securely. Not a live-world/server snapshot.
@@ -28,6 +31,8 @@ Install Ollama separately, pull a coding model such as `qwen2.5-coder:7b`, then 
 
 ## Windows desktop
 For a packaged preview, extract the entire Windows ZIP, run `DayZAI.Core.exe` first, then `DayZAI.Desktop.exe`. Stop the core by closing its console when finished. Ollama is optional and separately installed. Preview releases are published after successful CI tests and the packaged core health check.
+
+To collect an offline status report from an authorized remote Windows machine, run `cmd /c "DayZAI.Core.exe --snapshot > status.json"` there and transfer the JSON via your existing secure administration channel. Do not expose the core API to the network. Imported reports are not authenticated or live.
 
 For development:
 ```powershell

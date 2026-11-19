@@ -9,6 +9,7 @@ from .diagnostics import analyze_log
 from .server_monitor import server_processes
 from .server_actions import ActionRequest, propose_action
 from .config_checks import validate_config
+from .snapshot import status_snapshot
 
 app = FastAPI(title="DayZ AI Core", version="0.1.0")
 
@@ -33,6 +34,10 @@ def health():
 @app.get("/servers")
 def servers():
     return {"servers": server_processes(), "mode": "read_only"}
+
+@app.get("/status")
+def status():
+    return status_snapshot()
 
 @app.post("/servers/action-preview")
 def preview_server_action(req: ActionRequest):

@@ -1,10 +1,11 @@
-<Window x:Class="DayZAI.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="DayZ AI — Developer &amp; Server Doctor" Width="990" Height="720" MinWidth="650" MinHeight="520" Background="#101820" Foreground="White">
+<Window x:Class="DayZAI.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="DayZ AI — Developer &amp; Server Doctor" Width="990" Height="820" MinWidth="650" MinHeight="650" Background="#101820" Foreground="White">
   <Grid Margin="24">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
     <TextBlock Text="DayZ AI — Developer &amp; Server Doctor" FontSize="28" FontWeight="Bold"/>
     <WrapPanel Grid.Row="1" Margin="0,18,0,18">
       <Button Content="Выбрать лог DayZ" Click="SelectLog_Click" Padding="12,10" Margin="0,0,8,8"/>
       <Button Content="Найти серверы" Click="CheckServers_Click" Padding="12,10" Margin="0,0,8,8"/>
+      <Button Content="Импорт отчёта" Click="ImportStatus_Click" Padding="12,10" Margin="0,0,8,8"/>
       <Button Content="Проверить конфигурацию" Click="CheckConfig_Click" Padding="12,10" Margin="0,0,8,8"/>
       <Button Content="Проверить ядро" Click="CheckAI_Click" Padding="12,10" Margin="0,0,8,8"/>
     </WrapPanel>
@@ -18,7 +19,15 @@
         <Button Content="Проверить сервер и моды" Click="InspectProfile_Click" Padding="12,8" Margin="0,0,8,4"/>
         <Button Content="Копия конфигурации" Click="Backup_Click" Padding="12,8" Margin="0,0,8,4"/>
         <Button Content="Восстановить в новый файл" Click="Restore_Click" Padding="12,8" Margin="0,0,8,4"/>
+        <Button Content="Журнал запуска" Click="Journal_Click" Padding="12,8" Margin="0,0,8,4"/>
       </WrapPanel>
+      <DockPanel Margin="0,8,0,0" LastChildFill="True">
+        <TextBlock Text="Порт" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBox Name="GamePort" Text="2302" Width="70" MaxLength="5" Padding="4" Margin="0,0,12,0"/>
+        <Button DockPanel.Dock="Right" Name="LaunchButton" Content="Запуск сервера…" Click="Launch_Click" Padding="12,8" Margin="8,0,0,0"/>
+        <TextBlock Text="Моды через ;" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBox Name="LaunchMods" ToolTip="Например: @CF;@VVI" MaxLength="4000" Padding="4"/>
+      </DockPanel>
     </StackPanel>
     <StackPanel Grid.Row="3" Margin="0,0,0,12">
       <TextBlock Text="ИИ-помощник Enforce Script (локальная модель Ollama)" Margin="0,0,0,8"/>

@@ -5,5 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <ItemGroup><Compile Include="../DayZAI.Desktop/ServerWorkspace.cs" Link="ServerWorkspace.cs"/></ItemGroup>
+  <ItemGroup>
+    <Compile Include="../DayZAI.Desktop/ServerWorkspace.cs" Link="ServerWorkspace.cs"/>
+    <Compile Include="../DayZAI.Desktop/ServerLaunch.cs" Link="ServerLaunch.cs"/>
+  </ItemGroup>
 </Project>

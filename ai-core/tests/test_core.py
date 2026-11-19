@@ -89,3 +89,15 @@ def test_config_validation():
         assert result.status_code == 200
         assert result.json()['valid'] is valid
         assert result.json()['scope'] == 'syntax_only'
+
+
+def test_status_snapshot(monkeypatch):
+    from app import snapshot
+    from types import SimpleNamespace
+    monkeypatch.setattr(snapshot.psutil, 'virtual_memory', lambda: SimpleNamespace(total=8 * 1048576, available=3 * 1048576))
+    monkeypatch.setattr(snapshot.psutil, 'cpu_percent', lambda interval: 12.5)
+    monkeypatch.setattr(snapshot, 'server_processes', lambda: [{'pid': 42, 'name': 'DayZServer_x64.exe'}])
+    data = client.get('/status').json()
+    assert data['schema'] == 'dayz-ai-status-v1'
+    assert data['system'] == {'cpu_percent': 12.5, 'memory_total_mb': 8, 'memory_available_mb': 3}
+    assert data['servers'][0]['pid'] == 42

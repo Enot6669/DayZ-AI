@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://127.0.0.1:8765/"), Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _modelHttp = new() { BaseAddress = new Uri("http://127.0.0.1:8765/"), Timeout = TimeSpan.FromSeconds(135) };
     private readonly string _profilesFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DayZAI", "profiles.json");
+    private readonly string _journalFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DayZAI", "operations.jsonl");
     private List<ServerProfile> _profiles = [];
     public MainWindow()
     {
@@ -39,6 +40,33 @@ public partial class MainWindow : Window
             Output.Text = $"Профиль сохранён: {profile.Folder}";
         }
         catch (Exception ex) { Output.Text = $"Ошибка профиля: {ex.Message}"; }
+    }
+    private async void Launch_Click(object sender, RoutedEventArgs e)
+    {
+        if (Profiles.SelectedItem is not ServerProfile profile || !int.TryParse(GamePort.Text, out var port))
+        { Output.Text = "Выберите профиль и укажите порт."; return; }
+        LaunchButton.IsEnabled = false;
+        try
+        {
+            var modList = LaunchMods.Text;
+            var plan = await Task.Run(() => ServerLaunch.Prepare(profile, port, modList));
+            var mods = plan.Mods.Length == 0 ? "Без модов" : string.Join(';', plan.Mods);
+            if (MessageBox.Show($"Запустить доверенный локальный EXE?\n{plan.Executable}\nПорт: {plan.Port}\nМоды: {mods}\nПорядок и зависимости модов не проверены. Запуск может открыть сетевой порт.", "Подтверждение запуска", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            var pid = await Task.Run(() => ServerLaunch.StartConfirmed(plan, _journalFile));
+            Output.Text = $"Процесс создан: PID {pid}. Готовность игрового сервера ещё не проверена.\nЖурнал: {_journalFile}";
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка запуска: {ex.Message}"; }
+        finally { LaunchButton.IsEnabled = true; }
+    }
+    private void Journal_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (!File.Exists(_journalFile)) { Output.Text = "Журнал пока пуст."; return; }
+            if (new FileInfo(_journalFile).Length > 2_000_000) { Output.Text = $"Журнал больше 2 МБ: {_journalFile}"; return; }
+            Output.Text = string.Join(Environment.NewLine, File.ReadLines(_journalFile).TakeLast(100));
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка чтения журнала: {ex.Message}"; }
     }
     private async void InspectProfile_Click(object sender, RoutedEventArgs e)
     {
@@ -129,18 +157,42 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var response = await _http.GetAsync("servers");
+            using var response = await _http.GetAsync("status");
             response.EnsureSuccessStatusCode();
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            var servers = json.RootElement.GetProperty("servers");
-            if (servers.GetArrayLength() == 0)
-            {
-                Output.Text = "Запущенные процессы DayZ Server не найдены на этом компьютере.";
-                return;
-            }
-            Output.Text = JsonSerializer.Serialize(servers, new JsonSerializerOptions { WriteIndented = true });
+            Output.Text = FormatStatus(json.RootElement, "Локальный снимок");
         }
         catch (Exception ex) { Output.Text = $"Не удалось получить состояние сервера: {ex.Message}"; }
+    }
+    private async void ImportStatus_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog { Filter = "Отчёт состояния (*.json)|*.json", CheckFileExists = true };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            if (new FileInfo(dialog.FileName).Length > 1_000_000) throw new IOException("Отчёт больше 1 МБ.");
+            using var json = JsonDocument.Parse(await File.ReadAllTextAsync(dialog.FileName));
+            Output.Text = FormatStatus(json.RootElement, "Импортированный снимок (не проверен, не онлайн)");
+        }
+        catch (Exception ex) { Output.Text = $"Ошибка импорта: {ex.Message}"; }
+    }
+    private static string FormatStatus(JsonElement root, string title)
+    {
+        if (root.GetProperty("schema").GetString() != "dayz-ai-status-v1") throw new InvalidDataException("Неизвестная схема отчёта.");
+        var system = root.GetProperty("system");
+        var servers = root.GetProperty("servers");
+        var report = new System.Text.StringBuilder();
+        report.AppendLine(title);
+        report.AppendLine($"Время UTC: {root.GetProperty("captured_utc").GetString()}");
+        report.AppendLine($"CPU всего: {system.GetProperty("cpu_percent").GetDouble():F1}%");
+        report.AppendLine($"RAM доступно: {system.GetProperty("memory_available_mb").GetInt64()} / {system.GetProperty("memory_total_mb").GetInt64()} МБ");
+        report.AppendLine($"Процессов DayZ: {servers.GetArrayLength()}");
+        foreach (var item in servers.EnumerateArray().Take(100))
+        {
+            var memory = item.TryGetProperty("memory_mb", out var value) && value.ValueKind == JsonValueKind.Number ? $"{value.GetDouble():F1} МБ" : "н/д";
+            report.AppendLine($"PID {item.GetProperty("pid").GetInt32()} | {item.GetProperty("name").GetString()} | RAM {memory}");
+        }
+        return report.ToString();
     }
     private async void SelectLog_Click(object sender, RoutedEventArgs e)
     {
