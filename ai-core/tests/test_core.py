@@ -65,3 +65,27 @@ def test_process_filter(monkeypatch):
         info = {"pid": 43, "name": "notepad.exe"}
     monkeypatch.setattr(server_monitor.psutil, "process_iter", lambda attrs: [OtherProcess(), FakeProcess()])
     assert [p["pid"] for p in server_monitor.server_processes()] == [42]
+
+
+def test_preview_never_executes():
+    for operation in ('start', 'stop', 'restart', 'backup'):
+        response = client.post('/servers/action-preview', json={'operation': operation, 'pid': 42})
+        assert response.status_code == 200
+        assert response.json()['executed'] is False
+        assert response.json()['requires_confirmation'] is True
+
+
+def test_invalid_action():
+    assert client.post('/servers/action-preview', json={'operation': 'shell', 'pid': 42}).status_code == 422
+
+
+def test_config_validation():
+    for kind, text, valid in [
+        ('json', '{"enabled":true}', True), ('json', '{bad}', False),
+        ('json', 'NaN', False), ('xml', '<types/>', True),
+        ('xml', '<types>', False), ('xml', '<!DOCTYPE types><types/>', False),
+    ]:
+        result = client.post('/config/validate', json={'kind': kind, 'text': text})
+        assert result.status_code == 200
+        assert result.json()['valid'] is valid
+        assert result.json()['scope'] == 'syntax_only'

@@ -2,11 +2,13 @@ import os
 import urllib.error
 import urllib.request
 import json
+from typing import Literal
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from .diagnostics import analyze_log
 from .server_monitor import server_processes
 from .server_actions import ActionRequest, propose_action
+from .config_checks import validate_config
 
 app = FastAPI(title="DayZ AI Core", version="0.1.0")
 
@@ -15,6 +17,14 @@ class LogRequest(BaseModel):
 
 class PromptRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=10000)
+
+class ConfigRequest(BaseModel):
+    text: str = Field(max_length=2_000_000)
+    kind: Literal["json", "xml"]
+
+@app.post("/config/validate")
+def check_config(req: ConfigRequest):
+    return validate_config(req.text, req.kind)
 
 @app.get("/health")
 def health():

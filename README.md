@@ -7,7 +7,8 @@ Experimental hybrid DayZ Standalone development and diagnostics platform.
 - Local FastAPI AI core, bound to 127.0.0.1
 - Rule-based DayZ log scanning (RPT, LOG, ADM)
 - Read-only local DayZ server process monitoring via GET /servers (Windows UI: «Найти серверы»)
-- Optional Ollama generation endpoint
+- JSON/XML syntax validation without editing files (not a DayZ schema check)
+- Optional Ollama generation endpoint and desktop prompt interface; generated code is never executed automatically
 - Python unit/API tests and GitHub Actions Windows build
 
 **Not implemented:** remote agent, server modifications, automatic patches, PBO parser, production installer, model fine-tuning.
